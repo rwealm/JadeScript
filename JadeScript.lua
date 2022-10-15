@@ -31,8 +31,8 @@ me:action("Remove Current Bounty", {}, "this removes any bounty placed on you", 
     if memory.read_int(memory.script_global(1835502 + 4 + 1 + (players.user() * 3))) == 1 then 
         memory.write_int(memory.script_global(2815059 + 1856 + 17), -1)
         memory.write_int(memory.script_global(2359296 + 1 + 5149 + 13), 2880000)
+        util.toast("Removed Bounty of " ..memory.read_int(memory.script_global(1835502 + 4 + 1 + (players.user() * 3) + 1)).. "$")
     else
-        util.toast("Removed Bounty")
         util.toast("You do not currently have a bounty")
     end
     end)
