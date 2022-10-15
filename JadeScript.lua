@@ -8,7 +8,7 @@ util.require_natives(1663599433)
 
 -- Auto-Update
 local response = false
-local localVer = 0.2
+local localVer = 0.3
 async_http.init("raw.githubusercontent.com", "/rwealm/JadeScript/main/JadeScript.lua", function(output)
     currentVer = tonumber(output)
     response = true
