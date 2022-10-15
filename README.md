@@ -1,5 +1,7 @@
 # JadeScript
 
 ////// 10/15/22 Changelog \\\\\\
- + Fixed Removed Bounty Notif
+ + Auto-Update
+ + Credits under 'msic'
+ + Discord hyperlink
   
