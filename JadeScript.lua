@@ -6,7 +6,38 @@
 util.keep_running()
 util.require_natives(1663599433)
 
+-- Auto-Update
+local response = false
+local localVer = 0.3
+async_http.init("raw.githubusercontent.com", "JadeScript/blob/main/JadeScript.lua", function(output)
+    currentVer = tonumber(output)
+    response = true
+    if localVer ~= currentVer then
+        util.toast("This version is outdated but, functional. Please update to a more stable version.")
+        menu.action(menu.my_root(), "Update Lua", {}, "", function()
+            async_http.init('raw.githubusercontent.com','JadeScript/blob/main/JadeScript.lua',function(a)
+                local err = select(2,load(a))
+                if err then
+                    util.toast("Script failed to download. Please try again later. If this continues to happen then manually update via github.")
+                return end
+                local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
+                f:write(a)
+                f:close()
+                util.toast("Successfully updated!")
+                util.toast("Restarting JadeScript <3")
+                util.restart_script()
+            end)
+            async_http.dispatch()
+        end)
+    end
+end, function() response = true end)
+async_http.dispatch()
+repeat 
+    util.yield()
+until response
+
 util.toast("Script made by jadeee#4332")
+util.toast("Discord server: https://discord.gg/qE9vhN9T4F")
 root = menu.my_root()
 
 -- Me Options (Local)
@@ -64,3 +95,14 @@ for _, pid in pairs(players.list(true, true, true)) do
     util.trigger_script_event(1 << pid, {-1529596656, pid, -1874451036, 0, 0, 0, 0, 0, 0, 0, pid, 0, 0, 0})
 end
 end)
+
+local misc = menu.list(menu.my_root(), "Misc", {}, "")
+misc.hyperlink(menu.my_root(), "Join The Discord", "https://discord.gg/qE9vhN9T4F")
+local credits = menu.list(misc, "Credits", {}, "")
+menu.action(credits, "Jade", {}, "Created JadeScript", function()
+end)
+menu.action(credits, "Lance", {}, "Helped code JadeScript", function()
+end)
+
+
+ 
