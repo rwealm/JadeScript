@@ -9,13 +9,13 @@ util.require_natives(1663599433)
 -- Auto-Update
 local response = false
 local localVer = 0.3
-async_http.init("raw.githubusercontent.com", "JadeScript/blob/main/JadeScript.lua", function(output)
+async_http.init("raw.githubusercontent.com", "rwealm/JadeScript/main/JadeScript.lua", function(output)
     currentVer = tonumber(output)
     response = true
     if localVer ~= currentVer then
         util.toast("This version is outdated but, functional. Please update to a more stable version.")
         menu.action(menu.my_root(), "Update Lua", {}, "", function()
-            async_http.init('raw.githubusercontent.com','JadeScript/blob/main/JadeScript.lua',function(a)
+            async_http.init('raw.githubusercontent.com','rwealm/JadeScript/main/JadeScript.lua',function(a)
                 local err = select(2,load(a))
                 if err then
                     util.toast("Script failed to download. Please try again later. If this continues to happen then manually update via github.")
