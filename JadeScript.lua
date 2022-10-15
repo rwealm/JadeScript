@@ -104,5 +104,5 @@ end)
 menu.action(credits, "Lance", {}, "Helped code JadeScript", function()
 end)
 
-
- 
+root:action("Current Version: 0.3", {}, "", function()
+end)
