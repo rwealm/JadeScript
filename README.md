@@ -1,13 +1,8 @@
 # JadeScript
 
 ////// 10/16/22 Changelog \\\\\\
-- added logo display
-- added startup sound
-- added me > throw cars
-- added me > throw peds
-- added me > laser eyes
-- added game > visual tweaks
-- added world > no russian
-- recategorized things
-- added misc > buy thigh-highs
-- added prism to credits
+- improved laser eyes, now networked
+- "remove bounty" is now an automatic loop you can toggle
+- improved throw cars and throw peds, works more reliably
+- added online > e-bitch locator
+- bug fixes and improvements
