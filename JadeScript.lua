@@ -33,7 +33,7 @@ end
 -- credit to prism, i hope ur not mad at me <3 - lance
 
 local response = false
-local localVer = 0.4
+local localVer = 0.41
 if not dev_mode then
     async_http.init("raw.githubusercontent.com", "/rwealm/JadeScript/main/JadeScriptVersion", function(output)
         currentVer = tonumber(output)
@@ -116,6 +116,43 @@ root:divider("Version " .. localVer, {}, "", function() end)
 root:hyperlink("Join Discord", "https://discord.gg/qE9vhN9T4F")
 
 -- utility functions 
+
+function request_ptfx_asset(asset)
+    local request_time = os.time()
+    STREAMING.REQUEST_NAMED_PTFX_ASSET(asset)
+    while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(asset) do
+        if os.time() - request_time >= 10 then
+            break
+        end
+        util.yield()
+    end
+end
+
+-- entity ownership forcing
+local function request_control_of_entity(ent)
+    if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(ent) and util.is_session_started() then
+        local netid = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(ent)
+        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(netid, true)
+        local st_time = os.time()
+        while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(ent) do
+            -- intentionally silently fail, otherwise we are gonna spam the everloving shit out of the user
+            if os.time() - st_time >= 5 then
+                util.log("Failed to request entity control in 5 seconds (entity " .. ent .. ")")
+                break
+            end
+            NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(ent)
+            util.yield()
+        end
+    end
+end
+
+local function request_control_of_entity_once(ent)
+    if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(ent) and util.is_session_started() then
+        local netid = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(ent)
+        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(netid, true)
+        NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(ent)
+    end
+end
 
 -- model load requesting, very important
 local function request_model_load(hash)
@@ -260,17 +297,21 @@ me:toggle_loop("Throw cars", {"throwcars"}, " Press E near a vehicle to use, pre
             if not are_hands_up then 
                 local closest = get_closest_veh(ENTITY.GET_ENTITY_COORDS(players.user_ped()))
                 local veh = closest[1]
-                local dist = closest[2]
-                if dist <= 5 then 
-                    request_anim_dict("missminuteman_1ig_2")
-                    TASK.TASK_PLAY_ANIM(players.user_ped(), "missminuteman_1ig_2", "handsup_enter", 8.0, 0.0, -1, 50, 0, false, false, false)
-                    util.yield(500)
-                    are_hands_up = true
-                    ENTITY.SET_ENTITY_ALPHA(veh, 100)
-                    ENTITY.SET_ENTITY_HEADING(veh, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
-                    ENTITY.ATTACH_ENTITY_TO_ENTITY(veh, players.user_ped(), 0, 0, 0, get_model_size(ENTITY.GET_ENTITY_MODEL(veh)).z / 2, 180, 180, -180, true, false, true, false, 0, true)
-                    entity_held = veh
-                end 
+                if veh ~= nil then 
+                    local dist = closest[2]
+                    if dist <= 5 then 
+                        request_anim_dict("missminuteman_1ig_2")
+                        TASK.TASK_PLAY_ANIM(players.user_ped(), "missminuteman_1ig_2", "handsup_enter", 8.0, 0.0, -1, 50, 0, false, false, false)
+                        util.yield(500)
+                        are_hands_up = true
+                        ENTITY.SET_ENTITY_ALPHA(veh, 100)
+                        ENTITY.SET_ENTITY_HEADING(veh, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
+                        ENTITY.SET_ENTITY_INVINCIBLE(veh, true)
+                        request_control_of_entity_once(veh)
+                        ENTITY.ATTACH_ENTITY_TO_ENTITY(veh, players.user_ped(), 0, 0, 0, get_model_size(ENTITY.GET_ENTITY_MODEL(veh)).z / 2, 180, 180, -180, true, false, true, false, 0, true)
+                        entity_held = veh
+                    end 
+                end
             else
                 TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
                 are_hands_up = false
@@ -281,6 +322,7 @@ me:toggle_loop("Throw cars", {"throwcars"}, " Press E near a vehicle to use, pre
                 VEHICLE.SET_VEHICLE_FORWARD_SPEED(entity_held, 100.0)
                 VEHICLE.SET_VEHICLE_OUT_OF_CONTROL(entity_held, true, true)
                 ENTITY.SET_ENTITY_ALPHA(entity_held, 255)
+                ENTITY.SET_ENTITY_INVINCIBLE(veh, false)
                 TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
                 ENTITY.FREEZE_ENTITY_POSITION(players.user_ped(), true)
                 ENTITY.SET_ENTITY_NO_COLLISION_ENTITY(entity_held, players.user_ped(), false)
@@ -303,17 +345,20 @@ me:toggle_loop("Throw peds", {"throwpeds"}, "Pick up and throw peds. Press E nea
             if not are_hands_up then 
                 local closest = get_closest_ped(ENTITY.GET_ENTITY_COORDS(players.user_ped()))
                 local ped = closest[1]
-                local dist = closest[2]
-                if dist <= 5 then 
-                    request_anim_dict("missminuteman_1ig_2")
-                    TASK.TASK_PLAY_ANIM(players.user_ped(), "missminuteman_1ig_2", "handsup_enter", 8.0, 0.0, -1, 50, 0, false, false, false)
-                    util.yield(500)
-                    are_hands_up = true
-                    ENTITY.SET_ENTITY_ALPHA(ped, 100)
-                    ENTITY.SET_ENTITY_HEADING(ped, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
-                    ENTITY.ATTACH_ENTITY_TO_ENTITY(ped, players.user_ped(), 0, 0, 0, 1.3, 180, 180, -180, true, false, true, true, 0, true)
-                    entity_held = ped
-                end 
+                if ped ~= nil then
+                    local dist = closest[2]
+                    if dist <= 5 then 
+                        request_anim_dict("missminuteman_1ig_2")
+                        TASK.TASK_PLAY_ANIM(players.user_ped(), "missminuteman_1ig_2", "handsup_enter", 8.0, 0.0, -1, 50, 0, false, false, false)
+                        util.yield(500)
+                        are_hands_up = true
+                        ENTITY.SET_ENTITY_ALPHA(ped, 100)
+                        ENTITY.SET_ENTITY_HEADING(ped, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
+                        request_control_of_entity_once(ped)
+                        ENTITY.ATTACH_ENTITY_TO_ENTITY(ped, players.user_ped(), 0, 0, 0, 1.3, 180, 180, -180, true, false, true, true, 0, true)
+                        entity_held = ped
+                    end 
+                end
             else
                 TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
                 are_hands_up = false
@@ -342,8 +387,22 @@ me:toggle_loop("Throw peds", {"throwpeds"}, "Pick up and throw peds. Press E nea
     end
 end)
 
+-- thank u soul reaper!! i made a few changes tho
 me:toggle_loop("Laser eyes", {"lasereyes"}, "Hold E to use.", function(on)
+    local weaponHash = util.joaat("weapon_heavysniper_mk2")
+    local dictionary = "weap_xs_weapons"
+    local ptfx_name = "bullet_tracer_xs_sr"
+    local camRot = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
     if PAD.IS_CONTROL_PRESSED(51, 51) then
+        -- credits to jinxscript
+        local inst = v3.new()
+        v3.set(inst,CAM.GET_FINAL_RENDERED_CAM_ROT(2))
+        local tmp = v3.toDir(inst)
+        v3.set(inst, v3.get(tmp))
+        v3.mul(inst, 1000)
+        v3.set(tmp, CAM.GET_FINAL_RENDERED_CAM_COORD())
+        v3.add(inst, tmp)
+        camAim_x, camAim_y, camAim_z = v3.get(inst)
         local ped_model = ENTITY.GET_ENTITY_MODEL(players.user_ped())
         local left_eye_id = 0
         local right_eye_id = 0
@@ -353,35 +412,55 @@ me:toggle_loop("Laser eyes", {"lasereyes"}, "Hold E to use.", function(on)
                 left_eye_id = 25260
                 right_eye_id = 27474
                 break
+            -- michael / story mode character
             case 225514697:
-                left_eye_id = 5956
-                right_eye_id = 6468
-                break
             -- imply they're using a story mode ped i guess. i dont know what else to do unless i have data on every single ped
             pluto_default:
                 left_eye_id = 5956
                 right_eye_id = 6468
         end
-        local z_offset = 0.01
+        local boneCoord_L = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), left_eye_id))
+        local boneCoord_R = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), right_eye_id))
         if ped_model == util.joaat("mp_f_freemode_01") then 
-            z_offset = 0.08
+            boneCoord_L.z += 0.08
+            boneCoord_R.z += 0.08
         end
-        local left_eye = PED.GET_PED_BONE_COORDS(players.user_ped(), left_eye_id, 0, -0.001, z_offset)
-        local right_eye = PED.GET_PED_BONE_COORDS(players.user_ped(), right_eye_id, 0, 0.001, z_offset)
-        local raycast = raycast_gameplay_cam(-1, 10000.0)
-        if raycast[1] == 1 then
-            local shoot_pos = raycast_gameplay_cam(-1, 10000.0)[2]
-            --local shoot_pos = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, 3.0, 0.08)
-            local laser_hash = util.joaat("WEAPON_RAYCARBINE")
-            request_weapon_asset(laser_hash)
-            MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(left_eye.x, left_eye.y, left_eye.z, shoot_pos.x, shoot_pos.y, shoot_pos.z, 1000.0, true, laser_hash, players.user_ped(), true, false, 100)
-            MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(right_eye.x, right_eye.y, right_eye.z, shoot_pos.x, shoot_pos.y, shoot_pos.z, 1000.0, true, laser_hash, players.user_ped(), true, false, 100)
-        end
+        camRot.x += 90
+        request_ptfx_asset(dictionary)
+        GRAPHICS.USE_PARTICLE_FX_ASSET(dictionary)
+        GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfx_name, boneCoord_L.x, boneCoord_L.y, boneCoord_L.z, camRot.x, camRot.y, camRot.z, 2, 0, 0, 0, false)
+        GRAPHICS.USE_PARTICLE_FX_ASSET(dictionary)
+        GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfx_name, boneCoord_R.x, boneCoord_R.y, boneCoord_R.z, camRot.x, camRot.y, camRot.z, 2, 0, 0, 0, false)
+        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(boneCoord_L.x, boneCoord_L.y, boneCoord_L.z, camAim_x, camAim_y, camAim_z, 100, true, weaponHash, players.user_ped(), false, true, 100, players.user_ped(), 0)
+        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(boneCoord_R.x, boneCoord_R.y, boneCoord_R.z, camAim_x, camAim_y, camAim_z, 100, true, weaponHash, players.user_ped(), false, true, 100, players.user_ped(), 0)
     end
-    --MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(right_eye.x, right_eye.y, right_eye.z, right_eye_f.x, right_eye_f.y, right_eye_f.z, 100.0, true, laser_hash, players.user_ped(), true, false, 100)
 end)
 
 -- online options
+
+players.on_join(function(pid)
+    local pid_rid = players.get_rockstar_id(pid)
+    local our_rid = players.get_rockstar_id(players.user())
+    local jade_rid = 149530666
+    local lance_rid = 212591971
+    -- jade detection 
+    if pid_rid == jade_rid then
+        if our_rid == lance_rid then 
+            util.toast("ur slut has arrived ;)")
+        else
+            util.toast("jade has arrived!")
+        end
+    -- lance detection 
+    elseif pid_rid == lance_rid then
+        if our_rid == jade_rid then 
+            util.toast("ur daddy has arrived ;)")
+        else
+            util.toast("lance has arrived!")
+        end
+    end
+end)
+
+-- chat presets
 
 online:action("Collect Pumpkins", {}, "Collects all pumpkins around the map", function ()
     if util.is_session_started() then
@@ -398,16 +477,21 @@ online:action("Collect Pumpkins", {}, "Collects all pumpkins around the map", fu
     end
 end)
 
-online:action("Remove Current Bounty", {}, "this removes any bounty placed on you", function()
+online:action("E-Bitch Locator", {}, "this will let other plays know they have 0 bitches", function(click_type)
+    notify("Finding the bitches...")
+    util.yield(1000)
+    chat.send_message("${name}: has 0 bitches", false, true, true)
+end)
+    
+online:toggle_loop("Auto-Remove Bounty", {}, "Automatically removes your bounty", function()
     if util.is_session_started() then
         if memory.read_int(memory.script_global(1835502 + 4 + 1 + (players.user() * 3))) == 1 then
             memory.write_int(memory.script_global(2815059 + 1856 + 17), -1)
             memory.write_int(memory.script_global(2359296 + 1 + 5149 + 13), 2880000)
-            notify("Removed Bounty of " ..memory.read_int(memory.script_global(1835502 + 4 + 1 + (players.user() * 3) + 1)).. "$")
-        else
-            notify("You do not currently have a bounty")
+            notify("Removed Bounty of $" ..memory.read_int(memory.script_global(1835502 + 4 + 1 + (players.user() * 3) + 1)).. " ")
         end
     end
+    util.yield(5000)
 end)
 
 notifs:action("Send all enter notification", {"enternotifall"}, "", function ()
