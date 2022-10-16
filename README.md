@@ -1,6 +1,6 @@
 # JadeScript
 
-////// 10/15/22 Changelog \\\\\\
+////// 10/16/22 Changelog \\\\\\
 - added logo display
 - added startup sound
 - added me > throw cars
