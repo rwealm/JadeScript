@@ -1,10 +1,9 @@
 # JadeScript
 
-////// 10/16/22 Changelog \\\\\\
+////// 10/17/22 Changelog \\\\\\
 
-** General Fixes ** 
+** Small Update ** 
 
-
-- fixed notify all
-- fixed laser eye placement for female peds
-- fixed spacing in notifs command box initial text
+ * Moved E-Bitch Locator to chat_presets
++ Added multple chat presets
++ Added chat preset list
