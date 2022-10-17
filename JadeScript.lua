@@ -8,7 +8,6 @@
 local dev_mode = false
 -- ^^ OFF BEFORE U RELEASE
 
-
 -- DO NOT TOUCH UNLESS U R LUA RETARD
 util.keep_running()
 util.require_natives(1663599433)
@@ -33,7 +32,7 @@ end
 -- credit to prism, i hope ur not mad at me <3 - lance
 
 local response = false
-local localVer = 0.41
+local localVer = 0.42
 if not dev_mode then
     async_http.init("raw.githubusercontent.com", "/rwealm/JadeScript/main/JadeScriptVersion", function(output)
         currentVer = tonumber(output)
@@ -116,6 +115,28 @@ root:divider("Version " .. localVer, {}, "", function() end)
 root:hyperlink("Join Discord", "https://discord.gg/qE9vhN9T4F")
 
 -- utility functions 
+
+function send_job_notif(pid, text)
+    local event_data = {-1908874529, players.user(), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+    text = text:sub(1,127)
+    for i=0,#text-1 do
+        local slot = i//8
+        local byte = string.byte(text,i+1)
+        event_data[slot+3] = event_data[slot+3] | byte<<((i-slot*8)*8)
+    end
+    util.trigger_script_event(1 << pid, event_data)
+end
+
+function send_custom_notif(pid, inp)
+    local event_data = {-1529596656, pid, -1774527360, 100000000000, 0, 0, 0, 0, 0, 0, pid, 0, 0, 0}
+    inp = inp:sub(1,127)
+    for i=0,#inp-1 do
+        local slot = i//8
+        local byte = string.byte(inp,i+1)
+        event_data[slot+7] = event_data[slot+7] | byte<<((i-slot*8)*8)
+    end
+    util.trigger_script_event(1 << pid, event_data)
+end
 
 function request_ptfx_asset(asset)
     local request_time = os.time()
@@ -422,8 +443,8 @@ me:toggle_loop("Laser eyes", {"lasereyes"}, "Hold E to use.", function(on)
         local boneCoord_L = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), left_eye_id))
         local boneCoord_R = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), right_eye_id))
         if ped_model == util.joaat("mp_f_freemode_01") then 
-            boneCoord_L.z += 0.08
-            boneCoord_R.z += 0.08
+            boneCoord_L.z += 0.02
+            boneCoord_R.z += 0.02
         end
         camRot.x += 90
         request_ptfx_asset(dictionary)
@@ -495,7 +516,7 @@ online:toggle_loop("Auto-Remove Bounty", {}, "Automatically removes your bounty"
 end)
 
 notifs:action("Send all enter notification", {"enternotifall"}, "", function ()
-    menu.show_command_box("enternotifall".. "")
+    menu.show_command_box("enternotifall ")
 end, function(label)
     for _, pid in pairs(players.list(true, true, true)) do
         send_custom_notif(pid, label)
@@ -503,7 +524,7 @@ end, function(label)
 end)
 
 notifs:action("Send all job notification", {"joball"}, "", function ()
-    menu.show_command_box("joball".. " ")
+    menu.show_command_box("joball ")
 end, function(txt)
     for _, pid in pairs(players.list(true, true, true)) do
         send_job_notif(pid, txt)
