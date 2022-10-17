@@ -107,7 +107,7 @@ local online = root:list("Online")
 local world = root:list("World")
 local game = root:list("Game")
 --
-local chat_preset = online:list("Chat Presets", {}, "List of chat presets")
+local chat_presets = {"E-Bitch Locator", "E-men Locator", "DOX", "JadeScript on top"}
 local notifs = online:list("Send all notifs", {}, "Sends everyone a notification")
 --
 local misc = root:list( "Misc", {}, "")
@@ -477,28 +477,32 @@ online:action("Collect Pumpkins", {}, "Collects all pumpkins around the map", fu
 end)
 
 -- chat presets
-chat_preset:action("E-Bitch Locator", {}, "This will let other players know they have 0 bitches", function (click_type)
-    notify("Finding the bitches...")
-    util.yield(1000)
-    chat.send_message("${name}: has 0 bitches", false, true, true)
-end)
-
-chat_preset:action("E-Men Locator", {}, "Let's you know if there are any E-Men around", function (click_type)
-    notify("Finding the the men...")
-    util.yield(1000)
-    chat.send_message("There are currently no men in this server just so everyone knows :(", false, true, true)
-end)
-
-chat_preset:action("DOX", {}, "Doxxes everyone in the server", function (click_type)
-    notify("Currently doxxing players...")
-    util.yield(1000)
-    chat.send_message("${name}: ${ip} | ${geoip.city}, ${geoip.region}, ${geoip.country}", false, true, true)
-end)
-
-chat_preset:action("Jade script is so good!", {}, "HELLO ITS KITTY AND U SHOULD USE JADE SCRIPT", function (click_type)
-    notify("Finding the the men...")
-    util.yield(1000)
-    chat.send_message("HELLO ITS KITTY AND U SHOULD USE JADE SCRIPT (", false, true, true)
+online:list_action("Chat Presets", {}, "List of chat presets", chat_presets, function(index, value)
+    local text = ""
+    pluto_switch value do 
+        case "E-Bitch Locator":
+            notify("Finding bitches...")
+            util.yield(1000)
+            text = "${name}: has 0 bitches"
+            break 
+        case "E-men Locator": 
+            notify("Finding men...")
+            util.yield(1000)
+            text = "There are currently no men in this server :("
+            break 
+        case "DOX": 
+            notify("DOX'ing everyone...")
+            util.yield(1000)
+            text = "${name}: ${ip} | ${geoip.city}, ${geoip.region}, ${geoip.country}"
+            break 
+        case "JadeScript on top": 
+            text = "HELLO ITS KITTY AND U SHOULD USE JADESCRIPT"
+            break 
+        pluto_default:
+            util.log("No case was reached for chat presets ??")
+            return
+    end
+     chat.send_message(text, false, true, true)
 end)
    
 online:toggle_loop("Auto-Remove Bounty", {}, "Automatically removes your bounty", function()
